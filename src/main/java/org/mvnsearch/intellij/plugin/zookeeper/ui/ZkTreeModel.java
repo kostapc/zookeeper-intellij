@@ -1,7 +1,10 @@
 package org.mvnsearch.intellij.plugin.zookeeper.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
+import com.siyeh.ig.portability.RuntimeExecInspection;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 import javax.swing.event.TreeModelListener;
@@ -15,6 +18,8 @@ import java.util.*;
  * @author linux_china
  */
 public class ZkTreeModel implements TreeModel {
+    private static final Logger LOG = Logger.getInstance(ZkTreeModel.class);
+
     private ZkNode root = new ZkNode("/", null);
     private CuratorFramework curator;
     private List<String> whitePaths;
@@ -32,11 +37,16 @@ public class ZkTreeModel implements TreeModel {
 
     public Object getChild(Object parent, int i) {
         List<ZkNode> children = getChildren((ZkNode) parent);
+        if (i >= children.size()) {
+            //TODO loggin not found
+            return new ZkNode("/?", "unknown");
+        }
         return children.get(i);
     }
 
     public int getChildCount(Object parent) {
         ZkNode zkNode = (ZkNode) parent;
+        LOG.debug("Getting child count for {}", zkNode.getName());
         if (!zkNode.isFilled()) {
             fillZkNode(zkNode);
         }
@@ -61,7 +71,7 @@ public class ZkTreeModel implements TreeModel {
                 zkNode.setStat(stat);
             }
         } catch (Exception ignore) {
-
+            LOG.error(ignore);
         }
     }
 
@@ -108,7 +118,13 @@ public class ZkTreeModel implements TreeModel {
                     children.add(zkNode);
                 }
             }
+        } catch (KeeperException.ConnectionLossException e) {
+            LOG.error("Connection lost", e);
+        } catch (KeeperException.NoAuthException e) {
+
+            LOG.error("No authorization!", e);
         } catch (Exception ignore) {
+            throw new RuntimeException(ignore);
         }
         return children;
     }
