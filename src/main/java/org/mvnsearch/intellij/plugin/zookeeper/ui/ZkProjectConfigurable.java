@@ -28,6 +28,9 @@ public class ZkProjectConfigurable implements Configurable {
     private JCheckBox enableZooKeeperCheckBox;
     private JTextField charsetTextField;
     private JCheckBox statTooltipCheckBox;
+    private JTextField passwordTextField;
+    private JTextField loginTextField;
+
     private ZkConfigPersistence config;
 
     public ZkProjectConfigurable(Project project) {
@@ -60,12 +63,16 @@ public class ZkProjectConfigurable implements Configurable {
         String newPort = portTextField.getText().trim();
         String newPath = pathsTextField.getText();
         String newCharset = charsetTextField.getText();
+        String newLogin = loginTextField.getText().trim();
+        String newPassword = passwordTextField.getText();
         if (newPath == null) {
             newPath = "";
         } else {
             newPath = newPath.trim();
         }
         return !(newHost.equals(config.host)
+                && !newLogin.equals(config.login)
+                && !newPassword.equals(config.password)
                 && Integer.valueOf(newPort).equals(config.port)
                 && newCharset.equals(config.charset)
                 && config.enabled == enableZooKeeperCheckBox.isSelected()
@@ -82,6 +89,9 @@ public class ZkProjectConfigurable implements Configurable {
         boolean oldEnabled = config.enabled;
         config.enabled = enableZooKeeperCheckBox.isSelected();
         config.tooltip = statTooltipCheckBox.isSelected();
+        config.login = loginTextField.getText().trim();
+        config.password = passwordTextField.getText();
+
         ZkProjectComponent zkProjectComponent = ZkProjectComponent.getInstance(project);
         if (!oldEnabled && config.enabled) {
             zkProjectComponent.initZk();
@@ -107,6 +117,8 @@ public class ZkProjectConfigurable implements Configurable {
         pathsTextField.setText(config.whitePaths);
         charsetTextField.setText(config.charset == null ? "UTF-8" : config.charset);
         statTooltipCheckBox.setSelected(config.tooltip);
+        passwordTextField.setText(config.password);
+        loginTextField.setText(config.login);
     }
 
     @Override

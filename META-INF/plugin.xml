@@ -6,6 +6,9 @@
     <vendor email="linux_china@hotmail.com" url="https://twitter.com/linux_china">
         Jacky Chan
     </vendor>
+    <vendor email="bartek.zdanowski@gmail.com" url="http://teamlights.org">
+        Bartek Zdanowski
+    </vendor>
 
     <description><![CDATA[<html><body>
     	Manage ZooKeeper in IntelliJ IDEA.
@@ -29,6 +32,7 @@
     <change-notes><![CDATA[<html><body>
          <ul>
              <li>0.0.13: Upgrade libraries</li>
+             <li>0.0.12b: Added login and password for protected Nodes</li>
              <li>0.0.12: Curator updated to 2.8.0 and with slf4j included</li>
              <li>0.0.11: IDEA 14.1 support with jars upgraded</li>
              <li>0.0.9: zip & unzip support</li>

@@ -1,5 +1,6 @@
 package org.mvnsearch.intellij.plugin.zookeeper;
 
+import com.google.common.base.Strings;
 import com.intellij.ide.ui.customization.CustomizationUtil;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -23,8 +24,12 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.treeStructure.Tree;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.api.ACLProvider;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.common.IOUtils;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
 import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 import org.jdesktop.swingx.renderer.WrappingIconPanel;
 import org.jetbrains.annotations.NotNull;
@@ -41,9 +46,14 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.Component;
 import java.awt.GridLayout;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.io.ByteArrayOutputStream;
 import java.net.Socket;
+import java.util.*;
+import java.util.List;
 
 /**
  * Zoo Keeper project component
@@ -157,6 +167,10 @@ public class ZkProjectComponent extends DoubleClickListener implements ProjectCo
     @Override
     protected boolean onDoubleClick(MouseEvent mouseEvent) {
         Tree source = (Tree) mouseEvent.getSource();
+        return treeSelected(source);
+    }
+
+    private boolean treeSelected(Tree source) {
         TreePath treePath = source.getSelectionPath();
         if (treePath == null) {
             return true;
@@ -185,7 +199,11 @@ public class ZkProjectComponent extends DoubleClickListener implements ProjectCo
             initZk();
         }
         if (curator != null) {
-            zkTree.setModel(new ZkTreeModel(curator, ZkConfigPersistence.getInstance(project).whitePaths));
+            String whitePaths = ZkConfigPersistence.getInstance(project).whitePaths;
+            if (zkTree == null) {
+                zkTree = new Tree(new ZkTreeModel(curator, whitePaths));
+            }
+            zkTree.setModel(new ZkTreeModel(curator, whitePaths));
             zkTree.updateUI();
         }
     }
@@ -200,7 +218,13 @@ public class ZkProjectComponent extends DoubleClickListener implements ProjectCo
         }
         ZkConfigPersistence config = ZkConfigPersistence.getInstance(project);
         if (config.isAvailable() && ruok(config.getFirstServer())) {
-            this.curator = CuratorFrameworkFactory.newClient(config.getZkUrl(), new ExponentialBackoffRetry(1000, 0, 1000));
+            CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
+            builder.connectString(config.getZkUrl())
+                .retryPolicy(new ExponentialBackoffRetry(1000, 0, 1000));
+            if (!Strings.isNullOrEmpty(config.login)) {
+                builder.authorization("digest", (config.login + ":" + config.password).getBytes());
+            }
+            this.curator = builder.build();
             curator.start();
             this.fileSystem = new ZkVirtualFileSystem(curator, ZkConfigPersistence.getInstance(project).charset);
         }
@@ -220,5 +244,35 @@ public class ZkProjectComponent extends DoubleClickListener implements ProjectCo
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public void installOn(@NotNull Component c) {
+        super.installOn(c);
+
+        c.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+
+
+                System.out.println(e.getKeyCode());
+
+                if (e.getKeyChar() == KeyEvent.VK_ENTER) {
+
+                    Tree source = (Tree) e.getSource();
+                    treeSelected(source);
+                }
+            }
+        });
     }
 }

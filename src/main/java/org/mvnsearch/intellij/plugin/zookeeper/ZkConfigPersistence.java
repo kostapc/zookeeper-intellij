@@ -21,6 +21,8 @@ public class ZkConfigPersistence implements PersistentStateComponent<ZkConfigPer
     public Integer port;
     public String charset;
     public String whitePaths;
+    public String login;
+    public String password;
     public boolean enabled;
     public boolean tooltip;
 
